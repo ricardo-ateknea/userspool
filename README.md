@@ -1,2 +1,5 @@
-# userspool
-Pool of users
+# Users Pool
+Ateknea Users Pool approach.
+
+# Running the application
+mvn spring-boot:run
