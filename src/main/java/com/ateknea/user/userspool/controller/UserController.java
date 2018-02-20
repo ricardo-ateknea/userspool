@@ -1,10 +1,10 @@
 package com.ateknea.user.userspool.controller;
 
 import com.ateknea.user.userspool.exceptions.InvalidEmail;
-import com.ateknea.user.userspool.exceptions.TooMuchCharacters;
 import com.ateknea.user.userspool.exceptions.NoSuchUser;
+import com.ateknea.user.userspool.exceptions.TooMuchCharacters;
 import com.ateknea.user.userspool.model.User;
-import com.ateknea.user.userspool.repository.UserRepository;
+import com.ateknea.user.userspool.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,17 +18,21 @@ import java.util.Optional;
 
 @RestController
 public class UserController {
+    private static int MAX_NAME_FIELD_SIZE = 20;
+    private static int MAX_LASTNAME_FIELD_SIZE = 40;
+    private static int MAX_EMAIL_FIELD_SIZE = 40;
+
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @RequestMapping("/users")
     public List<User> userList() {
-        return userRepository.findAll();
+        return userService.findAllUsers();
     }
 
     @GetMapping("/users/{id}")
     public User retrieveUser(@PathVariable long id) throws NoSuchUser {
-        Optional<User> user = userRepository.findById(id);
+        Optional<User> user = userService.findById(id);
         if (!user.isPresent()) {
             throw new NoSuchUser("The desired user is not present: -" + id);
         }
@@ -38,10 +42,26 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<Object> createUser(@RequestBody User user) {
         checkParameters(user.getName(), user.getLastname(), user.getEmail());
-        User savedUser = userRepository.save(user);
+        User savedUser = userService.saveUser(user);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(savedUser.getId()).toUri();
         return ResponseEntity.created(location).build();
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable long id) {
+        checkParameters(user.getName(), user.getLastname(), user.getEmail());
+        Optional<User> userOptional = userService.findById(id);
+        if (!userOptional.isPresent())
+            return ResponseEntity.notFound().build();
+        user.setId(id);
+        userService.updateUser(user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/users/{id}")
+    public void deleteUser(@PathVariable long id) {
+        userService.deleteUserById(id);
     }
 
     private void checkParameters(String name, String surname, String email) {
@@ -55,11 +75,11 @@ public class UserController {
     }
 
     private boolean validNameAndSurname(String name, String surname) {
-        return name.length() <= 20 && surname.length() <= 40;
+        return name.length() <= MAX_NAME_FIELD_SIZE && surname.length() <= MAX_LASTNAME_FIELD_SIZE;
     }
 
     private boolean validEmail(String email) {
-        if (email.length() > 40) {
+        if (email.length() > MAX_EMAIL_FIELD_SIZE) {
             return false;
         }
         boolean result = true;
@@ -71,21 +91,4 @@ public class UserController {
         }
         return result;
     }
-
-    @PutMapping("/users/{id}")
-    public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable long id) {
-        checkParameters(user.getName(), user.getLastname(), user.getEmail());
-        Optional<User> userOptional = userRepository.findById(id);
-        if (!userOptional.isPresent())
-            return ResponseEntity.notFound().build();
-        user.setId(id);
-        userRepository.save(user);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/users/{id}")
-    public void deleteUser(@PathVariable long id) {
-        userRepository.delete(id);
-    }
-
 }
