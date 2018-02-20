@@ -37,17 +37,21 @@ public class UserController {
 
     @PostMapping("/users")
     public ResponseEntity<Object> createUser(@RequestBody User user) {
-        if (!validNameAndSurname(user.getName(), user.getLastname())) {
-            throw new TooMuchCharacters("Name or Last Name exceed the maximum chars: -"
-                    + user.getLastname().length() + ", " + user.getName().length());
-        }
-        if (!validEmail(user.getEmail())) {
-            throw new InvalidEmail("Invalid mail format" + user.getEmail());
-        }
+        checkParameters(user.getName(), user.getLastname(), user.getEmail());
         User savedUser = userRepository.save(user);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(savedUser.getId()).toUri();
         return ResponseEntity.created(location).build();
+    }
+
+    private void checkParameters(String name, String surname, String email) {
+        if (!validNameAndSurname(name, surname)) {
+            throw new TooMuchCharacters("Name or Last Name exceed the maximum chars: -"
+                    + surname.length() + ", " + name.length());
+        }
+        if (!validEmail(email)) {
+            throw new InvalidEmail("Invalid mail format" + email);
+        }
     }
 
     private boolean validNameAndSurname(String name, String surname) {
@@ -70,7 +74,7 @@ public class UserController {
 
     @PutMapping("/users/{id}")
     public ResponseEntity<Object> updateUser(@RequestBody User user, @PathVariable long id) {
-
+        checkParameters(user.getName(), user.getLastname(), user.getEmail());
         Optional<User> userOptional = userRepository.findById(id);
         if (!userOptional.isPresent())
             return ResponseEntity.notFound().build();
