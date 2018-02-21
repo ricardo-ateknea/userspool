@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>React + Spring</title>
+</head>
+<body>
+<div id='root'></div>
+
+<script src="https://fb.me/react-15.0.1.js"></script>
+<script src="https://fb.me/react-dom-15.0.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<script type="text/babel">
+
+var User = React.createClass({
+  render: function() {
+    return (
+      <tr>
+        <td>{this.props.user.name}</td>
+        <td>{this.props.user.lastname}</td>
+        <td>{this.props.user.email}</td>
+        <td>{this.props.user.status}</td>
+      </tr>);
+  }
+});
+
+var UsersTable = React.createClass({
+  render: function() {
+    var rows = [];
+    this.props.users.forEach(function(user) {
+      rows.push(<User user={user} />);
+    });
+    return (
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Lastname</th><th>email</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        <div className="container">
+    <table className="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Lastname</th>
+            <th>email</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+    </table>
+</div>
+</tbody>
+      </table>);
+  }
+});
+
+var USERS = [
+  {name: 'Joe', lastname: 'Biden', email: 'j.b@a.com', status: true}
+];
+
+var App = React.createClass({
+  loadUsersFromServer: function () {
+    var self = this;
+    $.ajax({
+      url: 'http://localhost:9090/users',
+      type: 'GET'
+    }).then(function (data) {
+      self.setState({users: data._embedded.users});
+    });
+  },
+
+  getInitialState: function () {
+    return {users: []};
+  },
+
+  componentDidMount: function () {
+    this.loadUsersFromServer();
+  },
+
+  render() {
+    return ( <UsersTable users={this.state.users}/> );
+  }
+});
+
+ReactDOM.render(
+  <App />, document.getElementById('root')
+);
+
+</script>
+</body>
+</html>
